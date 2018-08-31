@@ -1,0 +1,359 @@
+
+<!doctype html>
+
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+  <meta name="theme-color" content="#4F7DC9">
+  <meta charset="UTF-8">
+  <title>railsで学ぶウェブアプリケーションの基礎概念</title>
+  <script src="../../bower_components/webcomponentsjs/webcomponents-lite.js"></script>
+  <link rel="import" href="../../elements/codelab.html">
+  <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Source+Code+Pro:400|Roboto:400,300,400italic,500,700|Roboto+Mono">
+  <style is="custom-style">
+    body {
+      font-family: "Roboto",sans-serif;
+      background: var(--google-codelab-background, #F8F9FA);
+    }
+  </style>
+  
+</head>
+<body unresolved class="fullbleed">
+
+  <google-codelab title="railsで学ぶウェブアプリケーションの基礎概念"
+                  environment="web"
+                  feedback-link="">
+    
+      <google-codelab-step label="概要" duration="0">
+        <p>ウェブアプリケーションを作る上で必須の知識のうち、サーバーサイドプログラミングの基本的な概念を学ぶ</p>
+<h2>やること</h2>
+<ul>
+<li>ルーティング、レンダリングといった、アクセスされたときの実際の挙動</li>
+<li>モデルやデータベースのマイグレーションなどの概念と手順</li>
+<li>(簡易的な)モデル設計</li>
+<li>モデル同士のアソシエーション</li>
+</ul>
+<h2>やらないこと</h2>
+<ul>
+<li>Railsの詳細を知らないと実装できないこと</li>
+<li>CSSコーディングの技法</li>
+<li>デザイン方法論</li>
+<li>jQueryなどのライブラリー</li>
+<li>Vue,React,Angular,Elm,HyperAppなどのフレームワーク</li>
+</ul>
+<h2>必要な環境</h2>
+<ul>
+<li>Ruby 2.5.1</li>
+<li>Mysql 5.7</li>
+<li>Rails 5.2</li>
+</ul>
+<p>講習会では、これに加えてGit,anyenv,rbenv,Google Chrome,Visual Studio Codeをインストールしたものを仮想マシンとして配布しています。<br>さらに、Mysqlのrootユーザーにパスワードなしで入れるように設定もしてあります。<br>仮想マシンのデスクトップには、今回の講習会でできあがるものサンプルも置いてあります。(simple-chat)</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="ページが表示されるまで" duration="0">
+        <p>サーバーサイドプログラミングの前に、ウェブページの基本的なフローを改めて見た上で、「サーバーサイド」とはどれくらいなのかを確認します。</p>
+<h2>ウェブサービスの概要</h2>
+<p><img alt="ウェブサービスの概要" src="img/59655afda008bcb0.png"></p>
+<p>現在のウェブサービスの殆どは「クライアント - サーバーシステム」というシステムに当てはまります。<br>つまり、ブラウザなどのクライアントがインターネットを介してサーバーと通信するというシステムです。</p>
+<aside class="special"><p>「殆ど」と言ったように、中にはサーバーを介さずに直接クライアント同士が繋がっている、なんていうシステムも存在します。</p>
+</aside>
+<p>より具体的には以下のようなステップを踏んでいます。</p>
+<ol type="1">
+<li>クライアントがリクエストを送る</li>
+<li>ネットワークがそのリクエストを正しくサーバーまで届ける</li>
+<li>サーバーがリクエストに応じてレスポンスを返す</li>
+<li>ネットワークがそのレスポンスを正しくクライアントまで届ける</li>
+<li>クライアントがレスポンスに応じて結果を表示する</li>
+</ol>
+<h2>ウェブの世界の大まかな住み分け</h2>
+<p>これらのすべてについてそれぞれプログラミングで制御できるのですが、すべての分野に精通するのは難しいので、以下のようにある程度分業がされています。<br>きれいに分離できるわけではなく、ある程度重複も発生します。</p>
+<ul>
+<li>クライアントサイド(1,5)</li>
+<li>インフラストラクチャー(2,4)</li>
+<li>サーバーサイド(3)</li>
+</ul>
+<p>それぞれ、かっこの中の数字が対応しています。また、クライアントサイド、サーバーサイドでのエンジニアリングができる人をフロントエンドエンジニア、バックエンドエンジニアと呼んだりします。</p>
+<aside class="special"><p>実際は2つ以上できる人が多いです。今の所最低限サーバーサイドかクライアントサイドのどちらかができれば独自のウェブサービスを作ることができますが、それでも他の分野の知識はかなり要求されます。</p>
+</aside>
+<h2>サーバーサイドとは</h2>
+<p>つまり、サーバーサイドプログラミングとは、「リクエストに応じてレスポンスをいかに返すか」というものであると言えます。</p>
+<p>では、リクエストを受け取ってからレスポンスを返すまで、サーバーの中では何が起こってるのでしょうか？</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="レスポンスを送るまで" duration="0">
+        <p>レスポンスを返すまでの流れを通じて、ルーティングなどのいくつかの概念を確認します。たくさん用語が出てきて大変だと思いますが、あとで何回もこの図は見ることになると思うので、いまはひとまず「そういうことなんだ」と思っておいてください。</p>
+<p><img alt="サーバーサイドのフロー" src="img/1c60e00806926426.png"></p>
+<h2>ルーティング</h2>
+<p>最初にリクエストが届くと、そのデータ（基本的にはURL）をもとに、どの処理が呼び出されるのかがまず処理されます。例えば、<code>GET /users/list</code>だったら「ユーザー一覧を取得する関数」が呼ばれる、といった感じです。この振り分けの段階をルーティングと呼びます。</p>
+<h2>データベース</h2>
+<p>データベースです。（説明になってない。）<br>データがたくさん入っています。（これも説明になってない。）</p>
+<h2>モデル</h2>
+<p>データベースのデータに対する操作や、データ同士の相関をプログラムで表現したものです。例えば、<code>User</code>モデルだったら、「年齢を更新する」だったり、「<code>Profile</code>オブジェクト（プロファイル）を持っているので、それを更新する。」だったりといったメソッドが生えています。<br>一般的に、アプリケーションを通じて実現したいことはモデルで表現し、コントローラーなどはそれを表示したり変換したり操作したりするだけの場合が多いです。</p>
+<h2>コントローラー</h2>
+<p>モデルを操作したり変換したりして、レンダラーにデータを渡します。<br>たとえば、先程の<code>GET /users/list</code>の場合だと、「<code>User</code>のすべてのデータを取得して、一覧をレンダラーに渡す」といったふうになります。</p>
+<h2>レンダラー（テンプレート）</h2>
+<p>先程のコントローラーから受け渡されたデータを加工して、レスポンスの形にするのはここです。レスポンスといっても色々あり、画像だったりjsonだったりすることもありますが、普通はHTMLの文字列の形にデータを変換して吐き出すことが多いです。</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="作りたいもの" duration="0">
+        <p>一応基本概念をざっとさらったので、いよいよ作り始めるわけですが、その前にどんなアプリケーションを作るかを考えます。</p>
+<h2>画面</h2>
+<p><img alt="トークルームの画面" src="img/448f33fcf35e181b.png"></p>
+<p>デザインの欠片も存在しない殺風景な画面ですが、実装するとこんな感じになります。<br>作るアプリは、L○NEのような、グループでトークができるもの（の劣化版）です。</p>
+<h2>ユースケース</h2>
+<p>画面を見ると、だいたいこんな機能がほしいなあとなってきます。</p>
+<ul>
+<li>ルームにある投稿一覧を表示する</li>
+<li>投稿に対応するユーザーを表示する</li>
+<li>ルームにいるユーザーを一覧表示する</li>
+</ul>
+<p>また、以下のような機能もあったほうが良さそうです。</p>
+<ul>
+<li>自分の参加している部屋の一覧を表示する</li>
+</ul>
+<p>さらに、今回はログインなどを実装しない代わりに、以下の画面をつくることにします。</p>
+<ul>
+<li>ユーザーの一覧を表示する</li>
+</ul>
+<aside class="special"><p>今回は一応できたものが既にあったので、それを使ってしまいましたが、実際は紙などで画面の概要を書いたりしてほしいものを考えることが多い気がします。アプリケーションをつくる工程の中では一番夢がある楽しい工程です。</p>
+</aside>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="モデルを考える" duration="0">
+        <p>ユースケースを考えた次は、これを実現するのに必要なモデルを考えます。</p>
+<h2>登場人物を考える</h2>
+<p>モデルを作る一番簡単な方法の一つである、「名詞・動詞分析法」っぽいことをしながらモデルを考えていきます。<br>まずは、先程のユースケースから「名詞」を洗い出すとこんな感じになります。</p>
+<ul>
+<li>ユーザー</li>
+<li>ルーム</li>
+<li>投稿</li>
+</ul>
+<p>「一覧」とかはひとまず置いておくとします。</p>
+<h2>登場人物同士の相関を考える</h2>
+<p>この3つを見ると、以下のような相関があることがわかります。</p>
+<ul>
+<li>投稿には必ず一つのユーザーが対応する</li>
+<li>ルームには複数の投稿がある</li>
+<li>ルームには複数のユーザーがいる</li>
+<li>ユーザーは複数のルームに入っている</li>
+</ul>
+<h2>簡単なモデルの図</h2>
+<p>以上を踏まえた上でモデルの簡単な図を書くと以下のようになります。</p>
+<p><img alt="多重度" src="img/cc22af3edf44ef76.png"></p>
+<p>ユーザーと投稿とルームがそれぞれ線で結ばれていています。また、ユーザーと投稿を結ぶ線のユーザー側には「1」、投稿側には「*」が書かれていますが、これは、「ユーザー1つと投稿複数が対応している」ということを表しています。また、ユーザーとルームについては、「ユーザー複数とルーム複数が対応している」ということを表しています。</p>
+<h2>今回やらなかったこと</h2>
+<p>今回は名詞を洗い出しただけで、実際の「一覧を取得」だとか「追加」といったものをまるで考えませんでした。本来ならばもちろんこのステップも必要なのですが、今回考えなかったのは、Ruby on Railsがそういった「よくあるユースケース」を自動で実装してくれるためです。</p>
+<h2>参考になる情報</h2>
+<ul>
+<li><a href="http://www.itmedia.co.jp/im/articles/0403/31/news077.html" target="_blank">良い設計モデルの作り方</a></li>
+</ul>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="モデルを実装する" duration="0">
+        <p>モデルをデータベースのルールとして実装します。Railsの便利機能をいっぱいに使っていきますが、他の言語での実装でも参考になる事項が多いです。</p>
+<h2>モデルにフィールドを足す</h2>
+<p>前の項でモデルを定義したものの、これだけでは実装には少し足りませんので、いくつか情報を補足してやることにします。</p>
+<p>まずは、「フィールド」です。例えば、最低限以下のようなフィールドが必要になります。</p>
+<ul>
+<li>ユーザー → ユーザー名</li>
+<li>投稿 → 投稿内容</li>
+<li>ルーム → ルーム名</li>
+</ul>
+<h2>モデル同士の相関を付け足す</h2>
+<p>実はこれでもまだ足りなくて、これに加えて、モデル同士の「関連付け」を行ってやる必要があります。</p>
+<p><a href="https://railsguides.jp/association_basics.html" target="_blank">Active Record の関連付け (アソシエーション)</a>のページにあるアソシエーションに基づいてもう一回モデルを整理すると、以下のようになります。</p>
+<p><img alt="アソシエーション" src="img/d638b49c3f1d1a00.png"></p>
+<p>一つひとつ解説していきます。</p>
+<ul>
+<li>belongs_to</li>
+</ul>
+<p>1対1の関係を表します。今回は、投稿(post)がユーザー(user)に属している(post belongs_to user)という形で使用しています。これにより、postからuserを読むことが可能になります。実装の上では、postに「user_id」というフィールドを要求します。</p>
+<aside class="warning"><p>似た関係に「has_one」がありますが、「post has_one user」という関係性を作成してしまうと、userからpostは読めるものの、postからuserは読めなくなってしまいます。また、「user has_one post」とすると、今度はユーザーが一つの投稿しか持てなくなってしまいます。</p>
+</aside>
+<p>has_many</p>
+<p>1対多の関係を表します。今回は、ルーム(room)が投稿(post)をたくさん持っている(room has_many posts)という形で使用しています。これにより、roomからpostの一覧を読むことが可能になります。実装の上では、postに「room_id」というフィールドを要求します。</p>
+<aside class="special"><p>実装の上ではこれは「post belongs_to room」とほとんど同じです。実際、has_manyとbelongs_toは併用されることが多いです。今回使用しなかったのは、単純にpostからroomを読む必要がなかったためです。</p>
+</aside>
+<p>has_and_belongs_to_many</p>
+<p>多対多の関係を表します。今回は、ユーザー(user)とルーム(room)が多対多である(user has_and_belongs_to_many room)という形で使用しています。これにより、ユーザー、ルーム<br>がそれぞれ、自分と関係のある相手の一覧を取得することが可能になります。実装の上では、「user_idとroom_id」が対になった情報が入った「中間テーブル」を必要とします。</p>
+<aside class="special"><p>多対多の関係性にはhas_many :throughというものありますが、今回これをしなかったのは、「関係性そのものに対する属性」(いつ参加したか)などが必要無いためです。</p>
+</aside>
+<aside class="special"><p>残念ながら、プログラムを組む前にモデルが全てわかるケースはそんなには無いです。また、全て決まっていても、その変更で変わることは容易にありえます。しかし、「変わらないであろう場所」と「変わりうるであろう場所」をある程度予測してモデル化することで変更に強いシステムを設計することができます。これは、短期間、比較的小規模のプロジェクトでも有効です。</p>
+</aside>
+<h2>railsプロジェクトの作成とモデルの作成</h2>
+<p>ようやく実装です。ターミナルを起動して、以下のコマンドを順番に打ち込みましょう。</p>
+<pre><code>cd ~/desktop
+# railsのプロジェクトを作成
+rails new test_chat -d mysql -B
+cd test_chat/
+# エディタを起動
+code .
+</code></pre>
+<p>すると、ファイルがたくさん作成されてから、エディタが開くと思いますので、<code>Gemfile</code>の以下の行の先頭の「#」を消して保存します。</p>
+<pre><code># gem &#39;mini_racer&#39;, platforms: :ruby
+</code></pre>
+<p>そして、以下のコマンドを順番に打ってください。</p>
+<pre><code># 依存パッケージをインストール
+bundle install
+# データベースを作成
+rake db:create
+# モデルを作成
+rails g model user name:string
+rails g model room name:string
+rails g model post content:string room_id:integer user_id:integer
+</code></pre>
+<p>すると、ファイルがまたたくさん作成されると思います。</p>
+<h2>自動で作りきれない分を実装する</h2>
+<p>./db/migrateフォルダの中のusers,rooms,postsファイル、<br>そして、./app/modelsの中のusers,rooms,postsファイルを、同じデスクトップにある「simple-chat」の中身を参考に実装してください。(コピペでいいです)そして、以下のようなコマンドを実行してください。</p>
+<pre><code>rake db:migrate
+</code></pre>
+<p>うまくいったら、<code>mysql -uroot</code>と打って、以下のように打つとテーブルができていることがわかると思います。</p>
+<pre><code>use test_chat_development;
+show tables;
+</code></pre>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="データを入れてみる" duration="0">
+        <p>先程のモデル実装では、データベースのいわば「枠」を書き込んだだけですので、中身がありません。<br>しかし、実際の開発では仮のデータがあると便利な場面が多いですので、実際にデータを投入してみます。</p>
+<h2>シードファイルの作成と実行</h2>
+<p>実際にデータを投入するためには、./db/seedsファイルを編集し、以下のコマンドを実行すれば大丈夫です。</p>
+<pre><code>rake db:seed
+</code></pre>
+<p>先程開いたmysqlのターミナルで、以下のように打ってみましょう。また。usersのところを他のものに変えていろいろ試してみましょう。</p>
+<pre><code>select * from users;
+</code></pre>
+<p>いろいろ追加されているのがわかると思います。</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="データを表示してみる" duration="0">
+        <p>これでデータが追加されましたので、ようやく表示する準備が整いました。実際にコントローラー、ルーティングを作成し、表示をしてみます。</p>
+<h2>コントローラーの追加</h2>
+<p>Ruby on Railsでコントローラーを追加するのは非常に簡単です。以下のコマンドを打ってください。</p>
+<pre><code>rails g controller rooms show
+</code></pre>
+<p>すると、ファイルが作成されると思いますので、./app/controllers/rooms_controllerを実装してください。</p>
+<h2>ルーティングの実装</h2>
+<p>そのままですとルーティングがなされないので、./config/routes.rbを以下のように書き換えます</p>
+<pre><code>Rails.application.routes.draw do
+  get &#39;rooms/show/:room_name/:user_name&#39; =&gt; &#39;rooms#show&#39;
+  # For details on the DSL available within this file, see http://guides.rubyonrails.org/routing.html
+end
+</code></pre>
+<h2>テンプレートの編集</h2>
+<p>残すはあとはテンプレートの編集のみです。以下のコードを./app/views/rooms/show.html.erbに貼り付けてみてください。</p>
+<pre><code>&lt;h1&gt;
+    Room name: &lt;%= @room[:name] %&gt;
+&lt;/h1&gt;
+
+&lt;h2&gt;User List:&lt;/h2&gt;
+&lt;ul&gt;
+    &lt;% @room.users.each do |user|%&gt;
+    &lt;li&gt;
+        &lt;%= user[:name] %&gt;
+    &lt;/li&gt;
+    &lt;% end %&gt;
+&lt;/ul&gt;
+
+&lt;h2&gt;Post List:&lt;/h2&gt;
+&lt;ul&gt;
+    &lt;% @room.posts.each do |post|%&gt;
+    &lt;li&gt;
+        &lt;% user = post.user %&gt;
+        &lt;%= user.name %&gt; : &lt;%= post[:content] %&gt;
+    &lt;/li&gt;
+    &lt;% end %&gt;
+&lt;/ul&gt;
+</code></pre>
+<p>そして、以下のコマンドを打って、ブラウザで「localhost:3000/rooms/show/room_0/user_0」にアクセスしてみてください。</p>
+<pre><code>rails s
+</code></pre>
+<p>うまく表示されたらおめでとうございます！</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="データを追加してみる" duration="0">
+        <p>今回はmodelから作っていきましたが、今回は逆にレンダリング側からつくってみます。</p>
+<p>./app/views/rooms/show.html.erbに以下のコードを追加してください</p>
+<pre><code>&lt;%= form_for Post.new do |f| %&gt;
+    &lt;%= f.hidden_field :user_name, :value =&gt; @user.name %&gt;
+    &lt;%= f.hidden_field :room_name, :value =&gt; @room.name %&gt;
+    &lt;%= f.hidden_field :user_id, :value =&gt; @user.id %&gt;
+    &lt;%= f.hidden_field :room_id, :value =&gt; @room.id %&gt;
+    &lt;%= f.label :content %&gt;
+    &lt;%= f.text_area :content %&gt;
+    &lt;%= f.submit %&gt;
+&lt;% end %&gt;
+</code></pre>
+<p>この状態で先程のページにアクセスすると、今度はエラーが出てきます。これは、要は「postする先が存在しないけれどどうするの」ということです。なので、./config/routes.rbに以下のコードを書き足してやります。</p>
+<pre><code>  post &#39;posts&#39; =&gt; &#39;posts#create&#39;
+</code></pre>
+<p>すると、今度は、「そんな関数はない」というエラーが出てくると思うので、コントローラーを以下のコマンドでターミナルから追加してやります。</p>
+<pre><code>rails g controller posts
+</code></pre>
+<p>最後に、sample-chatを参考に./app/controllers/posts_controller.rbのコードを書いて実行してみると、今度は投稿もできるようになっているはずです！</p>
+
+
+      </google-codelab-step>
+    
+      <google-codelab-step label="発展的な課題" duration="0">
+        <p>その他simple-chatには、簡単な一覧表示などがありますが、ひとまずこれで最低限はいいでしょう。<br>あえて今回作らなかったところは、2週間以内に書いてきたら2週間以内にコードレビューします！</p>
+<ul>
+<li>退出できるようにしてみよう</li>
+<li>部屋を作れるようにしてみよう</li>
+<li>部屋に参加できるようにしてみよう</li>
+<li>サインインができるようにしてみよう</li>
+<li>ログイン、ログアウトができるようにしてみよう</li>
+<li>今回の実装でやばい箇所の改善</li>
+<li>その他機能追加</li>
+</ul>
+
+
+      </google-codelab-step>
+    
+  </google-codelab>
+
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+    ga('create', 'UA-49880327-14', 'auto');
+
+    (function() {
+      var gaCodelab = '';
+      if (gaCodelab) {
+        ga('create', gaCodelab, 'auto', {name: 'codelab'});
+      }
+
+      var gaView;
+      var parts = location.search.substring(1).split('&');
+      for (var i = 0; i < parts.length; i++) {
+        var param = parts[i].split('=');
+        if (param[0] === 'viewga') {
+          gaView = param[1];
+          break;
+        }
+      }
+      if (gaView && gaView !== gaCodelab) {
+        ga('create', gaView, 'auto', {name: 'view'});
+      }
+    })();
+  </script>
+
+</body>
+</html>

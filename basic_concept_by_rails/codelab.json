@@ -1,0 +1,17 @@
+{
+  "environment": "web",
+  "source": "index.md",
+  "format": "html",
+  "prefix": "../../",
+  "mainga": "UA-49880327-14",
+  "updated": "2018-08-31T10:06:05+09:00",
+  "id": "basic_concept_by_rails",
+  "duration": 0,
+  "title": "railsで学ぶウェブアプリケーションの基礎概念",
+  "summary": "",
+  "theme": "",
+  "status": null,
+  "category": null,
+  "tags": [],
+  "url": "basic_concept_by_rails"
+}
